@@ -1,0 +1,65 @@
+#!/bin/bash
+##############################################
+# This is an interactive script to get username
+# and password to be added into system as user
+# through useradd command.
+# 
+# USAGE:
+# sudo ./<program-name>
+# 
+# Example:
+# sudo ./add_user
+# 
+# Author: Kavya
+##############################################
+
+
+DEBUG=0
+
+# get login name
+read -p "Please enter your user name : " login
+echo ${login} | grep " "  && echo "Space not allowed in user name " && exit 1
+
+# get password 
+function read_pass
+{
+read -p  "Please ${1} your password : " passstring
+echo ${passstring}
+}
+
+#read password
+password1=`read_pass enter`  && echo " " && passcode=FALSE
+
+#(($DEBUG)) && set -x
+for i in 1 2 3
+do
+test ${passcode} == FALSE && password2=`read_pass confirm` && echo " "
+test "${password1}" == "${password2}" && passcode=TRUE || passcode=FALSE
+(($DEBUG)) && echo "attemptNo: $i....password1 = ${password1} , password2 = ${password2}"
+test ${passcode} == TRUE && break
+done
+
+# Validate password.
+test $passcode = TRUE && echo "PASSWORD:SUCCESSFULL"
+test $passcode != TRUE && echo "Your three attempts are done..." && exit 1
+
+# Confirm and add through useradd
+read -p "Do you really want to create a user? [yes/no] : " input
+if test "$input" == "yes"
+then
+echo "adding user....."
+useradd ${login}
+passwd ${login} << EOF
+${password1}
+${password1}
+EOF
+# verify if user is added.
+cat /etc/passwd | grep ${login}
+echo "User created succesfully!"
+
+# delete added user
+userdel ${login}
+exit 0
+fi
+
+exit 1
